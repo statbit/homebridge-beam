@@ -1,0 +1,29 @@
+{
+  "name": "homebridge-beam",
+  "version": "0.0.1",
+  "description": "Beam Projector plugin for homebridge",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/statbit/homebridge-beam.git"
+  },
+  "keywords": [
+    "homebridge-plugin"
+  ],
+  "author": "john@thepond.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/statbit/homebridge-beam/issues"
+  },
+  "homepage": "https://github.com/statbit/homebridge-beam#readme",
+  "engines": {
+    "node": ">=0.12.0",
+    "homebridge": ">=0.2.0"
+  },
+  "dependencies": {
+    "ws": "^1.0.1"
+  }
+}
