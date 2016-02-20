@@ -19,72 +19,80 @@ function BeamAccessory(log, config) {
   this.service = new Service.Switch(this.name);
   this.service.getCharacteristic(Characteristic.On).on('set', this.setState.bind(this));
   this.service.getCharacteristic(Characteristic.On).on('get', this.getState.bind(this));
-  this.off.bind(this)();
+  this.off();
 }
 
-BeamAccessory.prototype.communicate = function(callback) {
-  var client = new net.Socket();
-  client.connect(this.config.port, this.config.host, function() {
-    console.log("connected to beam");
-    callback(client);
-  });
-
-  client.on('data', function(data) { });
-  client.on('close', function() {
-    console.log('Connection closed to beam');
+function writeTo(client, command) {
+  return new Promise((resolve, reject) => {
+    client.write(command + "\n", () => {
+      resolve(client);
+    });
   });
 }
 
-function after(timeout, callback) {
-  setTimeout(callback, timeout);
+function wait(timeout, client) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {resolve(client)}, timeout);
+  });
+}
+
+BeamAccessory.prototype.communicate = function() {
+  return new Promise((resolve, reject) => {
+    var client = new net.Socket();
+    client.connect(this.config.port, this.config.host, () => {
+      resolve(client);
+    });
+    client.on('close', () => { this.log('Connection closed to beam') });
+  });
 }
 
 BeamAccessory.prototype.off = function() {
-  this.communicate(function(client) {
-    after(200, function() {
-      client.write("user;Kyle;xx\n", function() {
-        after(200, function() {
-          client.write("led;0;3\n", function() {
-            after(200, function() {
-              client.write("\n", function() {
-                after(200, function() {
-                  client.destroy();
-                });
-              });
-            });
-          });
-        });
-      });
-    });
+  this.communicate().then(client => {
+    return wait(200, client)
+  }).then(client => {
+    return writeTo(client, "user;Kyle;xx")
+  }).then(client => {
+    return wait(200, client)
+  }).then(client => {
+    return writeTo(client, "led;0;3")
+  }).then(client => {
+    return wait(200, client)
+  }).then(client => {
+    return writeTo(client, "")
+  }).then(client => {
+    return wait(200, client)
+  }).then(client => {
+    this.on_state = false;
+    this.log("Beam off");
+    client.destroy()
   });
-  console.log("Beam off");
-  this.on_state = false;
 }
 
 BeamAccessory.prototype.on = function() {
-  this.communicate(function(client) {
-    after(200, function() {
-      client.write("user;Kyle;xx\n", function() {
-        after(200, function() {
-          client.write("led;0;3\n", function() {
-            after(200, function() {
-              client.write("screen;0;0\n", function() {
-                after(200, function() {
-                  client.write("\n", function() {
-                    after(200, function() {
-                      client.destroy();
-                    });
-                  });
-                });
-              });
-            });
-          });
-        });
-      });
-    });
+  return this.communicate().then(client => {
+    return wait(200, client)
+  }).then(client => {
+    return writeTo(client, "user;Kyle;xx")
+  }).then(client => {
+    return wait(200, client)
+  }).then(client => {
+    return writeTo(client, "led;0;3")
+  }).then(client => {
+    return wait(200, client)
+  }).then(client => {
+    return writeTo(client, "screen;0;0")
+  }).then(client => {
+    return wait(200, client)
+  }).then(client => {
+    return writeTo(client, "")
+  }).then(client => {
+    return wait(200, client)
+  }).then(client => {
+    this.log("Beam on");
+    this.on_state = true;
+    client.destroy()
+    return this.on_state;
   });
-  console.log("Beam on");
-  this.on_state = true;
 }
 
 BeamAccessory.prototype.getState = function(callback) {
@@ -92,14 +100,11 @@ BeamAccessory.prototype.getState = function(callback) {
 }
 
 BeamAccessory.prototype.setState = function(state, callback) {
-  console.log("setting state to " + state);
   if(state) {
-    this.on();
+    this.on().then((state) =>{ callback(null); });
   } else {
-    this.off();
+    this.off().then((state) => { callback(null) });
   }
-
-  callback(null);
 }
 
 BeamAccessory.prototype.getServices = function() {
