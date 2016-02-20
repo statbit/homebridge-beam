@@ -7,7 +7,6 @@ module.exports = function(homebridge) {
   homebridge.registerAccessory("homebridge-beam", "Beam", BeamAccessory);
 };
 
-
 function BeamAccessory(log, config) {
   this.log = log;
   this.name = config["name"];
@@ -20,20 +19,17 @@ function BeamAccessory(log, config) {
   this.service = new Service.Switch(this.name);
   this.service.getCharacteristic(Characteristic.On).on('set', this.setState.bind(this));
   this.service.getCharacteristic(Characteristic.On).on('get', this.getState.bind(this));
-
   this.off.bind(this)();
 }
 
-
 BeamAccessory.prototype.communicate = function(callback) {
   var client = new net.Socket();
-  client.connect(13456, '192.168.1.11', function() {
+  client.connect(this.config.port, this.config.host, function() {
     console.log("connected to beam");
     callback(client);
   });
 
   client.on('data', function(data) { });
-
   client.on('close', function() {
     console.log('Connection closed to beam');
   });
@@ -45,10 +41,18 @@ function after(timeout, callback) {
 
 BeamAccessory.prototype.off = function() {
   this.communicate(function(client) {
-    client.write("user;Kyle;xx\n", function() {
-      client.write("led;3;3\n", function() {
-        client.write("led;0;3\n", function() {
-          client.destroy();
+    after(200, function() {
+      client.write("user;Kyle;xx\n", function() {
+        after(200, function() {
+          client.write("led;0;3\n", function() {
+            after(200, function() {
+              client.write("\n", function() {
+                after(200, function() {
+                  client.destroy();
+                });
+              });
+            });
+          });
         });
       });
     });
@@ -59,11 +63,21 @@ BeamAccessory.prototype.off = function() {
 
 BeamAccessory.prototype.on = function() {
   this.communicate(function(client) {
-    client.write("user;Kyle;xx\n", function() {
-      client.write("led;3;3\n", function() {
-        client.write("led;0;3\n", function() {
-          client.write("screen;0;0\n", function() {
-            client.destroy();
+    after(200, function() {
+      client.write("user;Kyle;xx\n", function() {
+        after(200, function() {
+          client.write("led;0;3\n", function() {
+            after(200, function() {
+              client.write("screen;0;0\n", function() {
+                after(200, function() {
+                  client.write("\n", function() {
+                    after(200, function() {
+                      client.destroy();
+                    });
+                  });
+                });
+              });
+            });
           });
         });
       });
@@ -78,6 +92,7 @@ BeamAccessory.prototype.getState = function(callback) {
 }
 
 BeamAccessory.prototype.setState = function(state, callback) {
+  console.log("setting state to " + state);
   if(state) {
     this.on();
   } else {
