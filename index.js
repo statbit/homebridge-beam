@@ -1,7 +1,7 @@
 var Service, Characteristic;
 var net = require("net");
 
-var timeout = 200;
+var timeout = 500;
 
 module.exports = function(homebridge) {
   Service = homebridge.hap.Service;
@@ -54,15 +54,13 @@ BeamAccessory.prototype.off = function() {
   }).then(client => {
     return writeTo(client, "user;Kyle;xx")
   }).then(client => {
-    return wait(timeout, client)
+    return wait(timeout*2, client)
   }).then(client => {
-    return writeTo(client, "led;0;3")
+    return writeTo(client, "screen;0;0")
   }).then(client => {
     return wait(timeout, client)
   }).then(client => {
     return writeTo(client, "")
-  }).then(client => {
-    return wait(timeout, client)
   }).then(client => {
     this.on_state = false;
     this.log("Beam off");
@@ -76,19 +74,9 @@ BeamAccessory.prototype.on = function() {
   }).then(client => {
     return writeTo(client, "user;Kyle;xx")
   }).then(client => {
-    return wait(timeout, client)
-  }).then(client => {
-    return writeTo(client, "led;0;3")
-  }).then(client => {
-    return wait(timeout, client)
-  }).then(client => {
-    return writeTo(client, "screen;0;0")
-  }).then(client => {
-    return wait(timeout, client)
+    return wait(timeout*2, client)
   }).then(client => {
     return writeTo(client, "")
-  }).then(client => {
-    return wait(timeout, client)
   }).then(client => {
     this.log("Beam on");
     this.on_state = true;
