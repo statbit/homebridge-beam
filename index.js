@@ -32,31 +32,44 @@ BeamAccessory.prototype.communicate = function(callback) {
     callback(client);
   });
 
-  client.on('data', function(data) {
-    console.log('Received: ' + data);
-    client.destroy(); // kill client after server's response
-  });
+  client.on('data', function(data) { });
 
   client.on('close', function() {
     console.log('Connection closed to beam');
   });
 }
 
+function after(timeout, callback) {
+  setTimeout(callback, timeout);
+}
+
 BeamAccessory.prototype.off = function() {
   this.communicate(function(client) {
-    client.write("user;Kyle;xx\n");
-    client.write("led;0;1\n");
-    client.write("led;0;0\n");
+    client.write("user;Kyle;xx\n", function() {
+      client.write("led;3;3\n", function() {
+        client.write("led;0;3\n", function() {
+          client.destroy();
+        });
+      });
+    });
   });
-  this.on_state = true;
+  console.log("Beam off");
+  this.on_state = false;
 }
 
 BeamAccessory.prototype.on = function() {
   this.communicate(function(client) {
-    client.write("user;Kyle;xx\n");
-    client.write("led;0;1\n");
-    client.write("screen;0;0\n");
+    client.write("user;Kyle;xx\n", function() {
+      client.write("led;3;3\n", function() {
+        client.write("led;0;3\n", function() {
+          client.write("screen;0;0\n", function() {
+            client.destroy();
+          });
+        });
+      });
+    });
   });
+  console.log("Beam on");
   this.on_state = true;
 }
 
