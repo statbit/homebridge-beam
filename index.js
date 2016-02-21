@@ -2,6 +2,7 @@ var Service, Characteristic;
 var net = require("net");
 
 var timeout = 500;
+var long_timeout = 3000;
 
 module.exports = function(homebridge) {
   Service = homebridge.hap.Service;
@@ -11,17 +12,15 @@ module.exports = function(homebridge) {
 
 function BeamAccessory(log, config) {
   this.log = log;
-  this.name = config["name"];
-  this.on_state = false;
-  this.config = {
-    host : config.host,
-    port : config.port,
-  }
+  this.config = config
 
-  this.service = new Service.Switch(this.name);
+  // Got to make a guess since there is no way to
+  // determine the state of the beam projector.
+  this.on_state = false;
+
+  this.service = new Service.Switch(this.config.name);
   this.service.getCharacteristic(Characteristic.On).on('set', this.setState.bind(this));
   this.service.getCharacteristic(Characteristic.On).on('get', this.getState.bind(this));
-  this.off();
 }
 
 function writeTo(client, command) {
@@ -44,17 +43,24 @@ BeamAccessory.prototype.communicate = function() {
     client.connect(this.config.port, this.config.host, () => {
       resolve(client);
     });
-    client.on('close', () => { this.log('Connection closed to beam') });
+
+    client.on('close', () => { this.log("Connection closed to beam") });
+    client.on('data', (data) => {this.log("received:" + data) });
   });
 }
 
+// turning off process: current APIs only offer a toggle, so we turn it on to turn it off
+//
+// connect to the beam (unfortunately this also turns on the beam grr)
+// wait 3 seconds -- there is a huge variance in how long it takes to turn on the beam, so we wait...
+// send the 'turn off' command
 BeamAccessory.prototype.off = function() {
   return this.communicate().then(client => {
     return wait(timeout, client)
   }).then(client => {
-    return writeTo(client, "user;Kyle;xx")
+    return writeTo(client, "user;Homebridge;" + this.config.macAddress)
   }).then(client => {
-    return wait(timeout*2, client)
+    return wait(long_timeout, client)
   }).then(client => {
     return writeTo(client, "screen;0;0")
   }).then(client => {
@@ -68,13 +74,17 @@ BeamAccessory.prototype.off = function() {
   });
 }
 
+// turning on process:
+//
+// Connect to beam -- this actually turns on the beam, but we need to wait to make sure
+// it actually turned on before handing control back to homebridge.
 BeamAccessory.prototype.on = function() {
   return this.communicate().then(client => {
     return wait(timeout, client)
   }).then(client => {
-    return writeTo(client, "user;Kyle;xx")
+    return writeTo(client, "user;Homebridge;" + this.config.macAddress)
   }).then(client => {
-    return wait(timeout*2, client)
+    return wait(long_timeout, client)
   }).then(client => {
     return writeTo(client, "")
   }).then(client => {
