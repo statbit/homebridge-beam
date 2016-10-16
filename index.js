@@ -62,9 +62,13 @@ BeamAccessory.prototype.off = function() {
   }).then(client => {
     return wait(long_timeout, client)
   }).then(client => {
-    return writeTo(client, "screen;0;0")
+    return wait(timeout, client)
+  }).then(client => {
+    return writeTo(client, "led;3;3")
   }).then(client => {
     return wait(timeout, client)
+  }).then(client => {
+    return writeTo(client, "led;0;3")
   }).then(client => {
     return writeTo(client, "")
   }).then(client => {
@@ -85,6 +89,18 @@ BeamAccessory.prototype.on = function() {
     return writeTo(client, "user;Homebridge;" + this.config.macAddress)
   }).then(client => {
     return wait(long_timeout, client)
+  }).then(client => {
+    return writeTo(client, "led;3;3")
+  }).then(client => {
+    return wait(timeout, client)
+  }).then(client => {
+    return writeTo(client, "led;0;3")
+  }).then(client => {
+    return wait(timeout, client)
+  }).then(client => {
+    return writeTo(client, "screen;0;0")
+  }).then(client => {
+    return wait(timeout, client)
   }).then(client => {
     return writeTo(client, "")
   }).then(client => {
